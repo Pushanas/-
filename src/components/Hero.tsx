@@ -122,8 +122,8 @@ export default function Hero() {
           transition={{ duration: 1, delay: 0.4 }}
           className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-serif text-white font-bold leading-[1.25] tracking-tight mb-8"
         >
-          مشويات مصرية <br className="hidden sm:inline" />
-          <span className="text-gradient">بطعم أصيل</span>
+          فحمة للمشويات <br className="hidden sm:inline" />
+          <span className="text-gradient">المشويات على أصولها</span>
         </motion.h1>
 
         <motion.p
