@@ -1,0 +1,6 @@
+{
+  "name": "فحمة | Fahma Grill Premium BBQ",
+  "description": "استمتع بأشهى الكباب والكفتة والمشويات الطازجة المشوية على الفحم الطبيعي، بمكونات مختارة بعناية وجودة تستحق التجربة.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
