@@ -1,29 +1,51 @@
-@import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Kufi+Arabic:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Alexandria:wght@400;600;700;800&family=Cairo:wght@400;600;700;800&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Noto Kufi Arabic", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "Amiri", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-sans: "Cairo", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Alexandria", ui-sans-serif, system-ui, sans-serif;
 
-  --color-primary: #D4AF37;
-  --color-primary-hover: #F3E5AB; /* Lighter gold for hover */
-  --color-primary-dark: #AA8C2C;
-  --color-accent: #FF4500; /* Deeper fire orange */
-  --color-background: #050505; /* Deeper black */
-  --color-surface: #0A0A0A;
-  --color-surface-light: #121212;
+  --color-primary: #E8B84B;
+  --color-primary-hover: #F3D58B; /* Lighter gold for hover */
+  --color-primary-dark: #C8941F;
+  --color-accent: #FF6B1A; /* Ember orange */
+  --color-background: #0D0D0D; /* Deep charcoal */
+  --color-surface: #1A1410;
+  --color-surface-light: #241C16;
+
+  --animate-shimmer: shimmer 1.8s infinite linear;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 @layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+    max-width: 100%;
+  }
+
   html {
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   body {
     @apply bg-background text-white font-sans antialiased overflow-x-hidden selection:bg-primary/30 selection:text-primary;
     direction: rtl;
+    overflow-x: hidden;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   h1, h2, h3, h4, h5, h6 {

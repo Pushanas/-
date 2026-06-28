@@ -1,365 +1,420 @@
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { menuItems, sideItems } from '../data';
-import { Star, Flame, ShoppingBag, MessageCircle, Heart } from 'lucide-react';
-import { useState } from 'react';
-import { MenuItem } from '../types';
+import { Star, Flame, ShoppingBag, Heart, Search, Sparkles, ArrowRight, SlidersHorizontal, CheckCircle2 } from 'lucide-react';
+import { MenuItem, MenuCategory, Language, PageView } from '../types';
+import { allMenuItems } from '../data';
+
+const getLowResPlaceholder = (url: string) => {
+  if (url.includes('unsplash.com')) {
+    try {
+      const parsedUrl = new URL(url);
+      parsedUrl.searchParams.set('w', '40');
+      parsedUrl.searchParams.set('q', '10');
+      parsedUrl.searchParams.set('blur', '20');
+      return parsedUrl.toString();
+    } catch {
+      return url;
+    }
+  }
+  return url;
+};
+
+const LazyImage = ({ src, alt }: { src: string; alt: string }) => {
+  const [isIntersecting, setIsIntersecting] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsIntersecting(true);
+            if (containerRef.current) observer.unobserve(containerRef.current);
+          }
+        });
+      },
+      { rootMargin: '300px' }
+    );
+
+    if (containerRef.current) observer.observe(containerRef.current);
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (isIntersecting && imgRef.current?.complete && imgRef.current?.naturalWidth > 0) {
+      setLoaded(true);
+    }
+  }, [isIntersecting]);
+
+  const [error, setError] = useState(false);
+  const lowResSrc = useMemo(() => getLowResPlaceholder(src), [src]);
+
+  return (
+    <div ref={containerRef} className="absolute inset-0 w-full h-full bg-[#101014] overflow-hidden select-none">
+      {/* Shimmer Skeleton Loading Backdrop */}
+      <div className={`absolute inset-0 bg-gradient-to-br from-[#1c1c24] via-[#121218] to-[#0a0a0e] overflow-hidden transition-opacity duration-700 z-0 ${loaded && !error ? 'opacity-0' : 'opacity-100'}`}>
+        <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.6s_infinite] bg-gradient-to-r from-transparent via-white/[0.08] to-transparent pointer-events-none" />
+        {error && (
+          <div className="absolute inset-0 bg-gradient-to-br from-[#1A1410] via-[#0D0D0D] to-[#1A1410] flex flex-col items-center justify-center p-3 text-center border border-[#E8B84B]/20">
+            <span className="text-[#FF6B1A] text-lg mb-1">🔥</span>
+            <span className="font-serif text-xs font-bold text-[#E8B84B] line-clamp-2 px-2">{alt}</span>
+            <span className="text-[8px] text-gray-500 uppercase tracking-widest mt-1">FAHMA GRILL</span>
+          </div>
+        )}
+      </div>
+
+      {/* Instant Low-Resolution Blurred Placeholder */}
+      {isIntersecting && !error && (
+        <img
+          src={lowResSrc}
+          alt=""
+          aria-hidden="true"
+          referrerPolicy="no-referrer"
+          onError={() => setError(true)}
+          className={`absolute inset-0 w-full h-full object-cover object-center filter blur-xl scale-110 opacity-70 transition-opacity duration-700 z-10 ${loaded ? 'opacity-0' : 'opacity-100'}`}
+        />
+      )}
+      
+      {/* High-Resolution Main Image */}
+      {isIntersecting && !error && (
+        <img
+          ref={imgRef}
+          src={src}
+          alt={alt}
+          loading="lazy"
+          onLoad={() => setLoaded(true)}
+          onError={() => setError(true)}
+          referrerPolicy="no-referrer"
+          className={`w-full h-full object-cover object-center group-hover:scale-105 transition-all duration-700 ease-out relative z-20 ${loaded ? 'opacity-100 blur-none scale-100' : 'opacity-0 blur-md scale-105'}`}
+        />
+      )}
+    </div>
+  );
+};
+
+const SkeletonCard = () => (
+  <div className="rounded-3xl bg-gradient-to-b from-white/[0.06] to-white/[0.02] border border-white/10 overflow-hidden flex flex-col justify-between shadow-xl relative select-none">
+    <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/[0.07] to-transparent z-30 pointer-events-none" />
+    
+    <div className="relative h-64 sm:h-56 md:h-64 w-full bg-[#14141a] p-4 flex flex-col justify-between">
+      <div className="flex justify-between items-center w-full">
+        <div className="w-20 h-6 bg-white/10 rounded-full animate-pulse" />
+        <div className="w-10 h-10 bg-white/10 rounded-full animate-pulse" />
+      </div>
+      <div className="w-24 h-6 bg-black/40 rounded-lg animate-pulse self-end" />
+    </div>
+
+    <div className="p-5 sm:p-6 flex flex-col flex-1 justify-between gap-4">
+      <div className="space-y-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="h-6 bg-white/15 rounded-md w-3/4 animate-pulse" />
+          <div className="h-6 bg-amber-400/10 rounded-md w-12 animate-pulse" />
+        </div>
+        <div className="space-y-2 pt-1">
+          <div className="h-3 bg-white/10 rounded w-full animate-pulse" />
+          <div className="h-3 bg-white/10 rounded w-5/6 animate-pulse" />
+          <div className="h-3 bg-white/10 rounded w-4/6 animate-pulse" />
+        </div>
+      </div>
+
+      <div className="pt-4 border-t border-white/10 flex items-center justify-between mt-auto gap-3">
+        <div className="space-y-1.5">
+          <div className="h-2.5 bg-white/10 rounded w-12 animate-pulse" />
+          <div className="h-6 bg-[#E8B84B]/20 rounded w-20 animate-pulse" />
+        </div>
+        <div className="h-11 bg-white/10 rounded-full w-28 animate-pulse" />
+      </div>
+    </div>
+  </div>
+);
+
 
 interface MenuProps {
+  lang: Language;
   onAddToCart: (item: MenuItem) => void;
   favorites: string[];
   onToggleFavorite: (id: string) => void;
+  previewOnly?: boolean;
+  onNavigate?: (view: PageView) => void;
+  initialCategory?: MenuCategory;
 }
 
-type Category = 'all' | 'grills' | 'sides' | 'drinks';
+export default function Menu({
+  lang,
+  onAddToCart,
+  favorites,
+  onToggleFavorite,
+  previewOnly = false,
+  onNavigate,
+  initialCategory = 'all'
+}: MenuProps) {
+  const [activeCategory, setActiveCategory] = useState<MenuCategory>(initialCategory);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [addedId, setAddedId] = useState<string | null>(null);
 
-export default function Menu({ onAddToCart, favorites, onToggleFavorite }: MenuProps) {
-  const [activeCategory, setActiveCategory] = useState<Category>('all');
+  const isAr = lang === 'ar';
 
-  const categories = [
-    { id: 'all', label: 'الكل' },
-    { id: 'grills', label: 'المشويات الرئيسية' },
-    { id: 'sides', label: 'الأطباق الجانبية والمقبلات' },
-    { id: 'drinks', label: 'المشروبات المنعشة' },
+  const categories: { id: MenuCategory; en: string; ar: string }[] = [
+    { id: 'all', en: 'All Selection', ar: 'الكل' },
+    { id: 'offers', en: 'Family Offers ⚡', ar: 'العروض والوجبات ⚡' },
+    { id: 'grills', en: 'Charcoal Grills', ar: 'مشويات الفحم' },
+    { id: 'oriental', en: 'Oriental & Casseroles', ar: 'مأكولات شرقية وطواجن' },
+    { id: 'sandwiches', en: 'Sandwiches & Burgers', ar: 'سندوتشات وبرجر شرقي' },
+    { id: 'starters', en: 'Meze & Salads', ar: 'المقبلات والسلطات' },
+    { id: 'desserts', en: 'Oriental Desserts', ar: 'الحلويات الشرقية' },
+    { id: 'beverages', en: 'Fresh Beverages', ar: 'المشروبات المنعشة' },
   ];
 
-  const displayedGrills = menuItems;
-  const displayedSides = sideItems.filter(item => item.category === 'sides');
-  const displayedDrinks = sideItems.filter(item => item.category === 'drinks');
+  const filteredItems = useMemo(() => {
+    let list = previewOnly ? allMenuItems.filter(item => item.badge === 'Signature' || item.badge === 'Best Seller').slice(0, 6) : allMenuItems;
+
+    if (!previewOnly && activeCategory !== 'all') {
+      list = list.filter(item => item.category === activeCategory);
+    }
+
+    if (!previewOnly && searchQuery.trim() !== '') {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(item =>
+        item.name.toLowerCase().includes(q) ||
+        item.nameEn.toLowerCase().includes(q) ||
+        item.description.toLowerCase().includes(q) ||
+        item.descriptionEn.toLowerCase().includes(q)
+      );
+    }
+
+    return list;
+  }, [activeCategory, searchQuery, previewOnly]);
+
+  const handleQuickAdd = (item: MenuItem) => {
+    onAddToCart(item);
+    setAddedId(item.id);
+    setTimeout(() => setAddedId(null), 1500);
+  };
+
+  const getBadgeStyle = (badge: string) => {
+    switch (badge) {
+      case 'Signature':
+        return 'bg-gradient-to-r from-[#d4af37] to-[#aa8c2c] text-black border-[#d4af37]';
+      case "Chef's Pick":
+        return 'bg-[#ff6a00] text-white border-[#ff6a00]';
+      case 'Best Seller':
+        return 'bg-amber-500 text-black border-amber-400';
+      case 'New':
+        return 'bg-emerald-600 text-white border-emerald-500';
+      default:
+        return 'bg-white/10 text-white border-white/20';
+    }
+  };
 
   return (
-    <section id="menu" className="py-32 bg-[#070709] relative overflow-hidden">
-      {/* Luxury atmospheric lighting glow */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary/5 blur-[160px] rounded-full pointer-events-none" />
+    <section 
+      id="menu" 
+      className={`bg-[#070709] relative overflow-hidden select-none ${previewOnly ? 'py-24 border-b border-white/10' : 'pt-28 pb-32 min-h-screen'}`}
+      dir={isAr ? 'rtl' : 'ltr'}
+    >
+      {/* Ambient background glows */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[#d4af37]/5 blur-[180px] rounded-full pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
-        <div className="text-center mb-16">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="flex items-center justify-center gap-3 mb-4"
-          >
-            <div className="h-[1px] w-8 bg-primary/60" />
-            <span className="text-primary tracking-widest text-xs md:text-sm font-bold uppercase">قائمة الطعام الفاخرة</span>
-            <div className="h-[1px] w-8 bg-primary/60" />
-          </motion.div>
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="text-4xl sm:text-5xl md:text-6xl font-serif text-white mb-6 font-bold tracking-tight"
-          >
-            أطباقنا <span className="text-primary">المميزة</span>
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-            className="text-gray-400 text-base md:text-lg max-w-2xl mx-auto leading-relaxed font-light"
-          >
-            قمة المشويات المصرية، محضرة بأجود أنواع اللحوم الطازجة ومتبلة بخلطتنا السرية، لتشوى على الفحم الطبيعي وتقدم لك بأسلوب استثنائي.
-          </motion.p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 relative z-10">
+        
+        {/* Section Header */}
+        <div className="text-center mb-12">
+          <span className="text-[#ff6a00] text-xs uppercase tracking-[0.3em] font-bold block mb-3">
+            {isAr ? 'قائمة الطعام الفاخرة' : 'Culinary Repertoire'}
+          </span>
+          <h2 className="text-3xl sm:text-6xl font-serif text-white font-extrabold mb-4">
+            {previewOnly
+              ? (isAr ? 'الأطباق الملكية المختارة' : 'Signature Masterpieces')
+              : (isAr ? 'منيو فحمة جريل الدولي' : 'The International Menu')}
+          </h2>
+          <p className="text-xs sm:text-base text-gray-300 font-light max-w-2xl mx-auto">
+            {isAr
+              ? 'تشكيلة مختارة من أرقى قطع اللحوم والمشويات المعدة على جمر الفحم الطبيعي، مصحوبة بصلصاتنا الحصرية.'
+              : 'Explore our master-curated selection of prime charcoal grills, Wagyu steaks, artisan sides, and decadent desserts.'}
+          </p>
         </div>
 
-        {/* Category Filter */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.3 }}
-          className="flex flex-wrap justify-center gap-3 md:gap-4 mb-20"
-        >
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setActiveCategory(cat.id as Category)}
-              className={`px-8 py-3.5 rounded-full font-bold text-sm md:text-base transition-all duration-300 border ${
-                activeCategory === cat.id
-                  ? 'bg-primary border-primary text-black shadow-[0_8px_30px_rgba(212,175,55,0.35)] scale-105'
-                  : 'bg-white/[0.03] border-white/10 text-gray-300 hover:border-primary/50 hover:text-white'
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
-        </motion.div>
-
-        {/* Grills Section */}
-        <AnimatePresence mode="wait">
-          {(activeCategory === 'all' || activeCategory === 'grills') && (
-            <motion.div
-              key="grills"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.5 }}
-              className="mb-24"
-            >
-              {activeCategory === 'all' && (
-                <div className="flex items-center justify-center gap-6 mb-12">
-                  <div className="h-[1px] flex-1 bg-white/[0.08]" />
-                  <h3 className="text-3xl font-serif font-bold text-white text-center">المشويات والأطباق الرئيسية الفاخرة</h3>
-                  <div className="h-[1px] flex-1 bg-white/[0.08]" />
-                </div>
+        {/* Full Menu Page Filters & Search */}
+        {!previewOnly && (
+          <div className="mb-12 space-y-6">
+            {/* Search Bar */}
+            <div className="max-w-xl mx-auto relative">
+              <Search className={`absolute top-1/2 -translate-y-1/2 ${isAr ? 'right-4' : 'left-4'} w-5 h-5 text-gray-400`} />
+              <input
+                type="text"
+                placeholder={isAr ? 'ابحث عن طبقك المفضل (كباب، ستيك، مولتن)...' : 'Search dishes (Tomahawk, Kofta, Fries)...'}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className={`w-full h-12 ${isAr ? 'pr-12 pl-4' : 'pl-12 pr-4'} rounded-full bg-white/5 border border-white/15 focus:border-[#d4af37] text-white placeholder:text-gray-500 text-sm focus:outline-none transition-all shadow-inner backdrop-blur-md`}
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className={`absolute top-1/2 -translate-y-1/2 ${isAr ? 'left-4' : 'right-4'} text-xs text-gray-400 hover:text-white`}
+                >
+                  {isAr ? 'مسح' : 'Clear'}
+                </button>
               )}
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 md:gap-10">
-                {displayedGrills.map((item, index) => {
-                  const isFav = favorites.includes(item.id);
-                  return (
-                    <motion.div
-                      key={item.id}
-                      initial={{ opacity: 0, y: 30 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: index * 0.08 }}
-                      className="group bg-[#0e0e12] border border-white/[0.07] rounded-[28px] overflow-hidden hover:border-primary/40 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8)] flex flex-col"
-                    >
-                      <div className="relative aspect-[4/3] overflow-hidden w-full bg-black">
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          loading="lazy"
-                          className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-108"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#0e0e12] via-transparent to-black/30 opacity-80 pointer-events-none" />
+            {/* Category Tabs */}
+            <div className="flex items-center justify-start sm:justify-center gap-2 overflow-x-auto pb-4 scrollbar-none">
+              {categories.map((cat) => {
+                const active = activeCategory === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => setActiveCategory(cat.id)}
+                    className={`px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 border ${
+                      active
+                        ? 'bg-gradient-to-r from-[#d4af37] to-[#aa8c2c] text-black border-[#d4af37] shadow-[0_0_20px_rgba(212,175,55,0.4)] scale-105'
+                        : 'bg-white/5 text-gray-300 border-white/10 hover:border-white/30 hover:bg-white/10'
+                    }`}
+                  >
+                    {isAr ? cat.ar : cat.en}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
-                        {/* Rating Badge */}
-                        <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 shadow-lg z-10">
-                          <Star className="w-3.5 h-3.5 text-primary fill-primary" />
-                          <span className="text-xs font-bold text-white mt-0.5">{item.rating}</span>
-                        </div>
+        {/* Menu Items Grid */}
+        <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
+          <AnimatePresence>
+            {filteredItems.map((item) => {
+              const isFav = favorites.includes(item.id);
+              const isAdded = addedId === item.id;
 
-                        {/* Favorite Button */}
-                        <button
-                          onClick={() => onToggleFavorite(item.id)}
-                          className={`absolute top-4 left-4 w-10 h-10 rounded-full backdrop-blur-md border border-white/10 flex items-center justify-center transition-all duration-300 z-10 shadow-lg ${
-                            isFav
-                              ? 'bg-red-500/20 text-red-500 border-red-500/40 scale-110'
-                              : 'bg-black/60 text-white/80 hover:text-red-400 hover:bg-black/80 hover:scale-105'
-                          }`}
-                          title={isFav ? 'إزالة من المفضلة' : 'إضافة للمفضلة'}
-                        >
-                          <Heart className={`w-4 h-4 ${isFav ? 'fill-red-500' : ''}`} />
-                        </button>
+              return (
+                <motion.div
+                  layout
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.4 }}
+                  key={item.id}
+                  className="rounded-3xl bg-gradient-to-b from-white/[0.06] to-white/[0.02] border border-white/10 hover:border-[#d4af37]/60 overflow-hidden flex flex-col justify-between group shadow-xl hover:-translate-y-2 transition-all duration-500"
+                >
+                  {/* Food Image Container - Crisp and 100% Clear */}
+                  <div className="relative h-64 sm:h-56 md:h-64 w-full overflow-hidden bg-[#101014]">
+                    <LazyImage src={item.image} alt={isAr ? item.name : item.nameEn} />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#08080a] via-transparent to-transparent opacity-60 z-20 pointer-events-none" />
 
-                        {/* Calories Badge */}
-                        {item.calories && (
-                          <div className="absolute bottom-4 right-4 flex items-center gap-1.5 bg-black/70 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 shadow-lg z-10">
-                            <Flame className="w-3.5 h-3.5 text-[#ff6a00]" />
-                            <span className="text-xs font-mono font-bold text-gray-200 mt-0.5">{item.calories} سعرة</span>
-                          </div>
-                        )}
+                    {/* Badge */}
+                    {item.badge && (
+                      <div className={`absolute top-4 ${isAr ? 'right-4' : 'left-4'} px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider shadow-lg border z-30 ${getBadgeStyle(item.badge)}`}>
+                        {item.badge}
                       </div>
+                    )}
 
-                      <div className="p-7 flex flex-col flex-grow">
-                        <h3 className="text-2xl font-serif font-bold text-white mb-3 group-hover:text-primary transition-colors">
-                          {item.name}
+                    {/* Favorite Button */}
+                    <button
+                      onClick={() => onToggleFavorite(item.id)}
+                      className={`absolute top-4 ${isAr ? 'left-4' : 'right-4'} w-10 h-10 rounded-full backdrop-blur-md flex items-center justify-center transition-all cursor-pointer z-30 ${
+                        isFav
+                          ? 'bg-[#ff6a00] text-white shadow-[0_0_15px_rgba(255,106,0,0.6)] scale-110'
+                          : 'bg-black/50 text-white/80 hover:text-white border border-white/20'
+                      }`}
+                      aria-label="Toggle Favorite"
+                    >
+                      <Heart className={`w-4 h-4 ${isFav ? 'fill-current' : ''}`} />
+                    </button>
+
+                    {/* Calories */}
+                    {item.calories && (
+                      <div className={`absolute bottom-3 ${isAr ? 'right-4' : 'left-4'} text-[11px] font-mono text-gray-300 bg-black/60 px-2.5 py-1 rounded-lg backdrop-blur-md border border-white/10 z-30`}>
+                        🔥 {item.calories} {isAr ? 'سعرة' : 'kcal'}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Food Card Body */}
+                  <div className="p-5 sm:p-6 flex flex-col flex-1 justify-between gap-4">
+                    <div>
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <h3 className="flex-1 min-w-0 font-serif text-lg sm:text-xl font-bold text-white group-hover:text-[#d4af37] transition-colors leading-tight break-words">
+                          {isAr ? item.name : item.nameEn}
                         </h3>
-                        <p className="text-sm text-gray-400 leading-relaxed mb-8 flex-grow font-light">
-                          {item.description}
-                        </p>
-                        <div className="flex items-center justify-between mt-auto pt-6 border-t border-white/[0.06] gap-3">
-                          <span className="text-primary font-serif font-bold text-2xl shrink-0">{item.price}</span>
-                          <div className="flex items-center gap-2.5">
-                            <a
-                              href={`https://wa.me/201234567890?text=${encodeURIComponent('مرحباً، أريد طلب: ' + item.name)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="w-12 h-12 bg-white/[0.04] border border-white/10 text-gray-300 rounded-2xl hover:bg-[#25D366] hover:border-[#25D366] hover:text-white transition-all duration-300 flex items-center justify-center shrink-0"
-                              title="اطلب عبر واتساب"
-                            >
-                              <MessageCircle className="w-5 h-5" />
-                            </a>
-                            <button
-                              onClick={() => onAddToCart(item)}
-                              className="px-6 py-3 btn-gold rounded-2xl text-sm font-bold flex items-center gap-2 shadow-lg active:scale-95 transition-transform"
-                            >
-                              <ShoppingBag className="w-4 h-4" />
-                              اطلب الآن
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </motion.div>
-          )}
-
-          {/* Sides Section */}
-          {(activeCategory === 'all' || activeCategory === 'sides') && (
-            <motion.div
-              key="sides"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.5 }}
-              className="mb-24"
-            >
-              {activeCategory === 'all' && (
-                <div className="flex items-center justify-center gap-6 mb-12">
-                  <div className="h-[1px] flex-1 bg-white/[0.08]" />
-                  <h3 className="text-3xl font-serif font-bold text-white text-center">الأطباق الجانبية والمقبلات الفاخرة</h3>
-                  <div className="h-[1px] flex-1 bg-white/[0.08]" />
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                {displayedSides.map((item, index) => {
-                  const isFav = favorites.includes(item.id);
-                  return (
-                    <motion.div
-                      key={item.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: index * 0.08 }}
-                      className="group bg-[#0e0e12] border border-white/[0.06] rounded-[24px] overflow-hidden hover:border-primary/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl flex flex-col"
-                    >
-                      <div className="relative aspect-[16/10] w-full overflow-hidden bg-black">
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          loading="lazy"
-                          className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700 ease-out"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#0e0e12] via-black/20 to-transparent pointer-events-none opacity-80" />
-
-                        {/* Rating */}
-                        <div className="absolute top-3.5 right-3.5 flex items-center gap-1 bg-black/70 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-xs font-bold text-white">
-                          <Star className="w-3.5 h-3.5 text-primary fill-primary" />
+                        <div className="flex items-center gap-1 text-amber-400 text-xs font-bold shrink-0 bg-amber-400/10 px-2 py-1 rounded-md border border-amber-400/20">
+                          <Star className="w-3.5 h-3.5 fill-current" />
                           <span>{item.rating}</span>
                         </div>
-
-                        {/* Favorite Button */}
-                        <button
-                          onClick={() => onToggleFavorite(item.id)}
-                          className={`absolute top-3.5 left-3.5 w-9 h-9 rounded-full backdrop-blur-md border border-white/10 flex items-center justify-center transition-all ${
-                            isFav
-                              ? 'bg-red-500/20 text-red-500 border-red-500/40'
-                              : 'bg-black/60 text-white/80 hover:text-red-400'
-                          }`}
-                          title={isFav ? 'إزالة من المفضلة' : 'إضافة للمفضلة'}
-                        >
-                          <Heart className={`w-4 h-4 ${isFav ? 'fill-red-500' : ''}`} />
-                        </button>
-
-                        {/* Calories */}
-                        {item.calories && (
-                          <div className="absolute bottom-3.5 right-3.5 flex items-center gap-1 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10 text-xs font-mono font-bold text-gray-200">
-                            <Flame className="w-3 h-3 text-[#ff6a00]" />
-                            <span>{item.calories} سعرة</span>
-                          </div>
-                        )}
                       </div>
 
-                      <div className="p-6 flex flex-col flex-1">
-                        <div className="flex justify-between items-center mb-2.5 gap-2">
-                          <h4 className="font-serif font-bold text-xl text-white group-hover:text-primary transition-colors">
-                            {item.name}
-                          </h4>
-                          <span className="text-primary font-serif font-bold text-xl shrink-0">{item.price}</span>
-                        </div>
-                        <p className="text-xs md:text-sm text-gray-400 font-light leading-relaxed mb-6 line-clamp-2 flex-1">
-                          {item.description}
-                        </p>
-                        <div className="flex items-center gap-2 pt-4 border-t border-white/[0.06]">
-                          <button
-                            onClick={() => onAddToCart(item)}
-                            className="w-full py-3 btn-gold rounded-xl text-xs md:text-sm font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform"
-                          >
+                      <p className="text-xs sm:text-sm text-gray-400 font-light leading-relaxed line-clamp-3">
+                        {isAr ? item.description : item.descriptionEn}
+                      </p>
+                    </div>
+
+                    {/* Price & Add CTA */}
+                    <div className="pt-4 border-t border-white/10 flex items-center justify-between mt-auto gap-3">
+                      <div className="shrink-0">
+                        <span className="text-[10px] uppercase tracking-wider text-gray-500 block">
+                          {isAr ? 'السعر الملكي' : 'Price'}
+                        </span>
+                        <span className="font-serif text-lg sm:text-xl font-extrabold text-[#d4af37]">
+                          {isAr ? item.price : item.priceEn}
+                        </span>
+                      </div>
+
+                      <button
+                        onClick={() => handleQuickAdd(item)}
+                        disabled={isAdded}
+                        className={`h-11 px-5 rounded-full font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer ${
+                          isAdded
+                            ? 'bg-emerald-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.5)] scale-95'
+                            : 'bg-white/10 hover:bg-[#d4af37] text-white hover:text-black border border-white/20 hover:border-[#d4af37] shadow-lg active:scale-95'
+                        }`}
+                      >
+                        {isAdded ? (
+                          <>
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>{isAr ? 'تمت الإضافة' : 'Added'}</span>
+                          </>
+                        ) : (
+                          <>
                             <ShoppingBag className="w-4 h-4" />
-                            اطلب الآن
-                          </button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </motion.div>
-          )}
+                            <span>{isAr ? 'أضف للطلب' : 'Order Now'}</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        </motion.div>
 
-          {/* Drinks Section */}
-          {(activeCategory === 'all' || activeCategory === 'drinks') && (
-            <motion.div
-              key="drinks"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.5 }}
-              className="mt-8"
+        {filteredItems.length === 0 && (
+          <div className="text-center py-20 text-gray-400">
+            <SlidersHorizontal className="w-12 h-12 mx-auto mb-4 text-gray-600 animate-pulse" />
+            <p className="text-lg">{isAr ? 'لا توجد أطباق تطابق بحثك.' : 'No dishes matched your search filter.'}</p>
+          </div>
+        )}
+
+        {/* Homepage Preview Footer CTA */}
+        {previewOnly && onNavigate && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="mt-16 text-center"
+          >
+            <button
+              onClick={() => onNavigate('menu')}
+              className="px-10 py-4 rounded-full bg-gradient-to-r from-[#d4af37] via-[#f3e5ab] to-[#aa8c2c] text-[#070709] font-extrabold text-sm sm:text-base tracking-widest uppercase transition-all shadow-[0_10px_35px_rgba(212,175,55,0.35)] hover:shadow-[0_15px_45px_rgba(212,175,55,0.6)] hover:scale-105 active:scale-95 inline-flex items-center gap-3 cursor-pointer"
             >
-              {activeCategory === 'all' && (
-                <div className="flex items-center justify-center gap-6 mb-12">
-                  <div className="h-[1px] flex-1 bg-white/[0.08]" />
-                  <h3 className="text-3xl font-serif font-bold text-white text-center">المشروبات المنعشة</h3>
-                  <div className="h-[1px] flex-1 bg-white/[0.08]" />
-                </div>
-              )}
+              <span>{isAr ? 'استكشف المنيو بالكامل (30+ صنف)' : 'Explore Complete Repertoire'}</span>
+              <ArrowRight className={`w-5 h-5 ${isAr ? 'rotate-180' : ''}`} />
+            </button>
+          </motion.div>
+        )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-                {displayedDrinks.map((item, index) => {
-                  const isFav = favorites.includes(item.id);
-                  return (
-                    <motion.div
-                      key={item.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: index * 0.08 }}
-                      className="group bg-[#0e0e12] border border-white/[0.06] rounded-[24px] overflow-hidden hover:border-primary/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl flex flex-col sm:flex-row items-center"
-                    >
-                      <div className="relative w-full sm:w-48 aspect-square shrink-0 overflow-hidden bg-black">
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          loading="lazy"
-                          className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700 ease-out"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t sm:bg-gradient-to-l from-[#0e0e12] via-transparent to-transparent pointer-events-none opacity-80" />
-
-                        <button
-                          onClick={() => onToggleFavorite(item.id)}
-                          className={`absolute top-3 right-3 w-8 h-8 rounded-full backdrop-blur-md border border-white/10 flex items-center justify-center transition-all ${
-                            isFav
-                              ? 'bg-red-500/20 text-red-500 border-red-500/40'
-                              : 'bg-black/60 text-white/80 hover:text-red-400'
-                          }`}
-                        >
-                          <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-red-500' : ''}`} />
-                        </button>
-                      </div>
-
-                      <div className="p-6 flex flex-col flex-1 w-full text-right">
-                        <div className="flex justify-between items-center mb-2 gap-2">
-                          <h4 className="font-serif font-bold text-lg text-white group-hover:text-primary transition-colors">
-                            {item.name}
-                          </h4>
-                          <span className="text-primary font-serif font-bold text-lg shrink-0">{item.price}</span>
-                        </div>
-                        <p className="text-xs text-gray-400 font-light leading-relaxed mb-5">
-                          {item.description}
-                        </p>
-                        <button
-                          onClick={() => onAddToCart(item)}
-                          className="mt-auto w-full py-2.5 btn-gold rounded-xl text-xs font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform"
-                        >
-                          <ShoppingBag className="w-3.5 h-3.5" />
-                          إضافة للسلة
-                        </button>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
     </section>
   );
